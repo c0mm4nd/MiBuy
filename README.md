@@ -8,7 +8,7 @@
 
 ## 使用
 
-```
+```bash
 git clone https://github.com/maoxs2/MiBuy
 cd MiBuy
 yarn
