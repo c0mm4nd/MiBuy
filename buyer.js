@@ -1,11 +1,10 @@
 const puppeteer = require('puppeteer');
-const cheerio = require('cheerio')
 
 const config = {
-    user: 'YOUR_PHONE', // WARNING: if you using phone number to login, make sure the phone number and your network(maybe proxy) in the same nation
-    password: 'YOUR_PASSWORD',
-    itemlink: 'ITEM_LINK', // For example: "https://item.mi.com/product/9372.html" - Mi9Pro
-    thetime: 1552010400 // https://shijianchuo.911cha.com/ helps you convert string to timestamp
+    user: 'MY_ACCOUNT', // WARNING: if you using phone number to login, make sure the phone number and your network(maybe proxy) in the same nation
+    password: 'MY_PASSWORD',
+    itemlink: 'https://www.mi.com/buy/detail?product_id=10000234', // For example: "https://item.mi.com/product/9372.html" - Mi9Pro
+    thetime: 1600000000 * 1000 // https://shijianchuo.911cha.com/ helps you convert string to timestamp
 }
 
 function sleep(ms) {
@@ -33,10 +32,22 @@ function sleep(ms) {
     await page.goto(config.itemlink) // Mi8Naive (for test)
 
     // Before the time, should keep the login status
-    for (;Date.now() < config.thetime * 1000;) {
+    for (;Date.now() < config.thetime;) {
+        console.log("time for readying")
         ctx = await page.content()
+
+        // check whether have we logged in
+        if (await page.$('a.login') !== null) {
+            console.log("clicking login...")
+            // click login for cookie share auth
+            await page.click("a.login")
+        }
+
         // check whether can we add cart now
-        if (ctx.indexOf('J_proBuyBtn')!=-1) { break }
+        if (await ctx.indexOf('J_proBuyBtn')!=-1) { 
+            console.log("cannot find J_proBuyBtn, try add it to cart...")
+            break 
+        }
 
         if (config.thetime * 1000 - Date.now() > 5 * 60 * 1000) {
             // Need to login?
@@ -46,27 +57,33 @@ function sleep(ms) {
                 ctx = await page.content()
             }
             
-            // Need agreement?
-            $ = cheerio.load(ctx)
-            if ($('.J_agreeModal').hasClass('modal-hide')) {
-                await page.evaluate(_ => {
-                    window.scrollBy(0, window.innerHeight/3);
-                });
-                await page.click('.J_sure')
-                await page.waitForNavigation()
-            }
+            /* Comment these because I dont find any agreement now. 22.08.2020 */
+            // Need agreement? 
+            // let agreement = await page.$('.J_agreeModal')
+            // let classes = await page.$eval('.J_agreeModal', (el) =>{
+            //     const classList = Array.from(el.classList);
+            //     return JSON.stringify(classList);
+            // })
+            // console.log(classes)
+            // if (classes.includes('modal-hide')) {
+            //     await page.evaluate(_ => {
+            //         window.scrollBy(0, window.innerHeight/3);
+            //     });
+            //     await page.click('.J_sure')
+            //     await page.waitForNavigation()
+            // }
 
             await sleep(5 * 60 * 1000)
         } else {
             // make sure the page refresh after  
-            await sleep(config.thetime * 1000 - Date.now() + 1)
+            await sleep(config.thetime * 1000 - Date.now())
             await page.goto(config.itemlink)
         }
     }  
 
     // This step will add goods to cart
     // Mi maybe need to require input the captcha, do it by yourselves
-    await page.click('.J_proBuyBtn')
+    await page.click('a.btn.btn-primary')
     await page.waitForNavigation()
 
     // Goto cart to continue buying

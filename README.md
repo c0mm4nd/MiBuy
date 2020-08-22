@@ -9,11 +9,19 @@
 ## 使用
 
 ```bash
+# 下载代码
 git clone https://github.com/maoxs2/MiBuy
 cd MiBuy
+
+# 如果在国内需要提供国内chromium源
+export PUPPETEER_DOWNLOAD_HOST=https://npm.taobao.org/mirrors
+# 安装依赖
 yarn
 
 # 修改buyer.js中config
+code buyer.js
+
+# 启动
 node buyer.js
 ```
 
